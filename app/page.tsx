@@ -7,6 +7,7 @@ import { useBooksStore } from "@/lib/store"
 import { BookOpen, Users, MessageCircle, Shield, Star, TrendingUp } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { BookCard } from "@/components/books/book-card"
 
 export default function HomePage() {
   const { books, getFilteredBooks } = useBooksStore()
@@ -71,27 +72,35 @@ export default function HomePage() {
             <p className="text-muted-foreground text-lg">Discover amazing books from our community</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {featuredBooks.map((book) => (
-              <Card key={book.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="aspect-[3/4] relative">
-                  <Image src={book.image || "/placeholder.svg"} alt={book.title} fill className="object-cover" />
-                </div>
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-lg">{book.title}</CardTitle>
-                      <CardDescription>{book.author}</CardDescription>
-                    </div>
-                    <Badge variant="secondary">${book.price}</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <Badge variant="outline">{book.condition}</Badge>
-                    <span className="text-sm text-muted-foreground">by {book.sellerName}</span>
-                  </div>
-                </CardContent>
-              </Card>
+            {featuredBooks.map((book:any) => (
+              // <Card key={book.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              //   <div className="aspect-3/4 w-[60%] m-auto relative">
+              //     <Image src={book.image || "/placeholder.svg"} alt={book.title} fill className="object-cover" />
+              //   </div>
+              //   <CardHeader>
+              //     <div className="flex justify-between items-start">
+              //       <div>
+              //         <CardTitle className="text-lg">{book.title}</CardTitle>
+              //         <CardDescription>{book.author}</CardDescription>
+              //       </div>
+              //       <Badge variant="secondary">${book.price}</Badge>
+              //     </div>
+              //   </CardHeader>
+              //   <CardContent>
+              //     <div className="flex items-center justify-between">
+              //       <Badge variant="outline">{book.condition}</Badge>
+              //       <span className="text-sm text-muted-foreground">by {book.sellerName}</span>
+              //     </div>
+              //     <div className="mt-4 flex justify-end">
+              //       <Link href={`/books/${book.id}`}>
+              //         <Button size="sm" variant="secondary" aria-label="View details">
+              //           View details
+              //         </Button>
+              //       </Link>
+              //     </div>
+              //   </CardContent>
+              // </Card>
+              <BookCard key={book.id} book={book} />
             ))}
           </div>
           <div className="text-center mt-8">

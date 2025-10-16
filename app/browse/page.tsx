@@ -29,7 +29,7 @@ export default function BrowsePage() {
               <Grid className="h-4 w-4" />
             </Button>
             <Button variant={viewMode === "list" ? "default" : "outline"} size="sm" onClick={() => setViewMode("list")}>
-              <List className="h-4 w-4" />
+              <List className="h-4 w-2" />
             </Button>
           </div>
           <p className="text-sm text-muted-foreground">
@@ -41,7 +41,7 @@ export default function BrowsePage() {
         {filteredBooks.length > 0 ? (
           <div
             className={
-              viewMode === "grid" ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" : "space-y-4"
+              viewMode === "grid" ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" : "w-[50%] m-auto space-y-4"
             }
           >
             {filteredBooks.map((book) => (

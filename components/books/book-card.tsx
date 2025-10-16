@@ -41,7 +41,11 @@ export function BookCard({ book }) {
     router.push(`/checkout/${book.id}`)
   }
 
-  const getConditionColor = (condition) => {
+  const handleView = () => {
+    router.push(`/books/${book.id}`)
+  }
+
+  const getConditionColor = (condition:string) => {
     switch (condition.toLowerCase()) {
       case "excellent":
         return "bg-green-500/10 text-green-500 border-green-500/20"
@@ -58,7 +62,7 @@ export function BookCard({ book }) {
 
   return (
     <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-      <div className="aspect-[3/4] relative overflow-hidden">
+      <div className="aspect-3/4 w-[60%] m-auto relative overflow-hidden">
         <Image
           src={book.image || "/placeholder.svg?height=400&width=300&query=book cover"}
           alt={book.title}
@@ -73,7 +77,13 @@ export function BookCard({ book }) {
         </div>
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
           <div className="flex gap-2">
-            <Button size="sm" variant="secondary" className="bg-background/90 hover:bg-background">
+            <Button
+              size="sm"
+              variant="secondary"
+              className="bg-background/90 hover:bg-background"
+              onClick={handleView}
+              aria-label="View details"
+            >
               <Eye className="h-4 w-4 mr-1" />
               View
             </Button>

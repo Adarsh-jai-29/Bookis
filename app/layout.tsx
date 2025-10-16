@@ -8,9 +8,9 @@ import { Suspense } from "react"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "BOOKish - Buy & Sell Books Online",
+  title: "BOOKis - Buy & Sell Books Online",
   description: "The ultimate marketplace for buying and selling books. Find rare books, textbooks, and bestsellers.",
-  generator: "v0.app",
+  generator: "Bookis",
 }
 
 export default function RootLayout({
