@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -53,7 +53,7 @@ export function Navbar() {
           {isAuthenticated ? (
             <>
               <Link href="/sell">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" className="cursor-pointer !bg-green-600" >
                   <Plus className="h-4 w-4 mr-2" />
                   Sell Book
                 </Button>
@@ -66,7 +66,7 @@ export function Navbar() {
               </Link>
 
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+                <DropdownMenuTrigger >
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={user?.avatar || "/placeholder.svg"} alt={user?.name} />
@@ -82,6 +82,7 @@ export function Navbar() {
                     </div>
                   </div>
                   <DropdownMenuSeparator />
+                  
                   <DropdownMenuItem asChild>
                     <Link href="/dashboard">
                       <User className="mr-2 h-4 w-4" />
@@ -94,6 +95,7 @@ export function Navbar() {
                       My Books
                     </Link>
                   </DropdownMenuItem>
+                  
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={logout}>
                     <LogOut className="mr-2 h-4 w-4" />

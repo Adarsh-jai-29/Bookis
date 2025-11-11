@@ -3,22 +3,51 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
-import { useAuthStore, useBooksStore, useChatStore } from "@/lib/store"
+import { useAuthStore, useChatStore } from "@/lib/store"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MessageCircle, ShoppingCart, ArrowLeft } from "lucide-react"
+import React from "react"
 
 export default function BookDetailsPage() {
   const params = useParams()
   const router = useRouter()
-  const id = Number(params?.id)
-  const { books } = useBooksStore()
+  const bookId = params?.id
+
+  // const { books } = useBooksStore()
   const { user, isAuthenticated } = useAuthStore()
   const { createConversation } = useChatStore()
+  const [loading, setLoading] = React.useState(true)
 
-  const book = books.find((b) => b.id === id)
+  // console.log(books)
+  // const book = books.map((b) => b.id === id)
+  //  console.log(book)
+
+  const fetchBookById = async (bookId: number | string | string[] ) => {
+    try {
+      const res = await fetch(`/api/books/${bookId}`, { method: "GET" })
+      if (!res.ok) throw new Error("Failed to fetch book")
+      const data = await res.json()
+      setLoading(false)
+      return data
+    } catch (error) {
+      console.error("Error fetching book:", error)
+      setLoading(false)
+      return null
+    }
+  }
+
+  const [book, setBook] = React.useState<any>(null)
+  React.useEffect(() => {
+    const getBook = async () => {
+      const fetchedBook = await fetchBookById(bookId)
+      setBook(fetchedBook)
+    }
+    getBook()
+  }, [bookId])
+
 
   const getConditionColor = (condition: string) => {
     switch (condition.toLowerCase()) {
@@ -60,6 +89,9 @@ export default function BookDetailsPage() {
 
   if (!book) {
     return (
+      loading ?  (<div className="container mx-auto px-4 py-10">
+           <p className="text-center text-muted-foreground">Loading book details...</p>
+         </div>) :
       <div className="container mx-auto px-4 py-10">
         <div className="mb-6">
           <Link

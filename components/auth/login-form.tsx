@@ -1,44 +1,81 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useAuthStore } from "@/lib/store"
-import { useRouter } from "next/navigation"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useAuthStore } from "@/lib/store";
 
-export function LoginForm() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [isSignUp, setIsSignUp] = useState(false)
-  const [name, setName] = useState("")
-  const login = useAuthStore((state) => state.login)
-  const router = useRouter()
+type AuthType = "login" | "signup";
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
+export function LoginForm({ type = "login" }: { type?: AuthType }) {
+  const [isSignUp, setIsSignUp] = useState(type === "signup");
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const login = useAuthStore((state) => state.login);
 
-    // Mock authentication - in real app, this would call an API
-    const userData = {
-      id: Date.now(),
-      email,
-      name: isSignUp ? name : email.split("@")[0],
-      avatar: `/placeholder.svg?height=40&width=40&query=user avatar`,
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.id]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    setLoading(true);
+    try {
+      const url = isSignUp ? "/api/signup" : "/api/login";
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Something went wrong");
+
+      console.log("data", data);
+
+      if (!isSignUp && data.token) {
+        localStorage.setItem("token", data.token);
+        login(data.user);
+        router.push("/");
+      }
+
+      if (isSignUp) setIsSignUp(false);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setLoading(false);
     }
-
-    login(userData)
-    router.push("/dashboard")
-  }
+  };
 
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold">{isSignUp ? "Join BOOKish" : "Welcome Back"}</CardTitle>
+        <CardTitle className="text-2xl font-bold">
+          {isSignUp ? "Join BOOKish" : "Welcome Back"}
+        </CardTitle>
         <CardDescription>
-          {isSignUp ? "Create your account to start buying and selling books" : "Sign in to your BOOKish account"}
+          {isSignUp
+            ? "Create your account to start buying and selling books."
+            : "Sign in to your BOOKish account."}
         </CardDescription>
       </CardHeader>
+
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           {isSignUp && (
@@ -47,49 +84,63 @@ export function LoginForm() {
               <Input
                 id="name"
                 type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={form.name}
+                onChange={handleChange}
                 required
                 placeholder="Enter your full name"
               />
             </div>
           )}
+
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={form.email}
+              onChange={handleChange}
               required
               placeholder="Enter your email"
             />
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <Input
               id="password"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={form.password}
+              onChange={handleChange}
               required
               placeholder="Enter your password"
             />
           </div>
-          <Button type="submit" className="w-full">
-            {isSignUp ? "Create Account" : "Sign In"}
+
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={loading}
+          >
+            {loading
+              ? "Please wait..."
+              : isSignUp
+              ? "Create Account"
+              : "Sign In"}
           </Button>
         </form>
+
         <div className="mt-4 text-center">
           <button
             type="button"
             onClick={() => setIsSignUp(!isSignUp)}
             className="text-sm text-muted-foreground hover:text-foreground"
           >
-            {isSignUp ? "Already have an account? Sign in" : "Don't have an account? Sign up"}
+            {isSignUp
+              ? "Already have an account? Sign in"
+              : "Don't have an account? Sign up"}
           </button>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

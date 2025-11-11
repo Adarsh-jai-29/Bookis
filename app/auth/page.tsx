@@ -1,4 +1,5 @@
 import { LoginForm } from "@/components/auth/login-form"
+import { connectDB } from "@/lib/dbConnect";
 
 export default function AuthPage() {
   return (

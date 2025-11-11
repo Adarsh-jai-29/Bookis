@@ -38,11 +38,11 @@ export function BookCard({ book }) {
       return // Can't buy your own book
     }
 
-    router.push(`/checkout/${book.id}`)
+    router.push(`/checkout/${book._id}`)
   }
 
   const handleView = () => {
-    router.push(`/books/${book.id}`)
+    router.push(`/books/${book._id}`)
   }
 
   const getConditionColor = (condition:string) => {
@@ -80,7 +80,7 @@ export function BookCard({ book }) {
             <Button
               size="sm"
               variant="secondary"
-              className="bg-background/90 hover:bg-background"
+              className="bg-background/90 hover:bg-background hover:cursor-pointer "
               onClick={handleView}
               aria-label="View details"
             >

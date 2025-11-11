@@ -25,13 +25,24 @@ import { useAuthStore, useBooksStore } from "@/lib/store"
 import { MoreHorizontal, Edit, Trash2, Eye, MessageCircle, Calendar } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
+import { Book } from "@/app/my-books/page"
+import { DropdownMenuLabel } from "@radix-ui/react-dropdown-menu"
 
-export function MyBooksList() {
+
+interface MyBooksListProps {
+  books: Book[]
+}
+
+export function MyBooksList({books}: MyBooksListProps) {
   const { user } = useAuthStore()
-  const { books, deleteBook } = useBooksStore()
+  const {  deleteBook } = useBooksStore()
   const [bookToDelete, setBookToDelete] = useState(null)
-
-  const myBooks = books.filter((book) => book.sellerId === user?.id)
+  const myBooks = books.filter((book) =>
+  {  
+    // console.log(book,user._id)
+    return book.sellerId === user?._id
+  })
+  // console.log(user)
 
   const handleDeleteBook = (book) => {
     setBookToDelete(book)
@@ -98,14 +109,14 @@ export function MyBooksList() {
                   <CardTitle className="text-lg leading-tight line-clamp-2">{book.title}</CardTitle>
                   <CardDescription>{book.author}</CardDescription>
                 </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild>
+               <DropdownMenu>
+  <DropdownMenuTrigger>
+    <Button variant="ghost" size="sm" className="p-0 rounded-full">
+      <MoreHorizontal className="h-4 w-4" />
+    </Button>
+  </DropdownMenuTrigger>
+  <DropdownMenuContent>
+        <DropdownMenuItem asChild>
                       <Link href={`/book/${book.id}`}>
                         <Eye className="mr-2 h-4 w-4" />
                         View Listing

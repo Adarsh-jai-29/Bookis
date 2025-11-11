@@ -31,6 +31,7 @@ export function BookForm({ book = null, onSuccess }) {
     image: book?.image || "",
   })
 
+
   const [imagePreview, setImagePreview] = useState(book?.image || "")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -74,20 +75,32 @@ export function BookForm({ book = null, onSuccess }) {
     e.preventDefault()
     setIsSubmitting(true)
 
+  console.log(book)
     try {
       const bookData = {
         ...formData,
         price: Number.parseFloat(formData.price),
         publishedYear: Number.parseInt(formData.publishedYear),
-        sellerId: user.id,
+        sellerId: user._id,
         sellerName: user.name,
         image: imagePreview || `/placeholder.svg?height=400&width=300&query=${formData.title} book cover`,
       }
 
       if (isEditing) {
-        updateBook(book.id, bookData)
+        updateBook(book._id, bookData)   // todo: see book var
       } else {
-        addBook(bookData)
+          const res = await fetch('/api/books', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bookData),
+          })
+
+          if (res.ok) {
+            const newBook = await res.json()
+            addBook(newBook) 
+            // addBook(bookData)
+            // resetForm()
+          }
       }
 
       onSuccess?.()
