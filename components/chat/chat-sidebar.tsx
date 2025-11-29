@@ -16,12 +16,14 @@ export function ChatSidebar({ activeConversationId, onConversationSelect }) {
   const [searchQuery, setSearchQuery] = useState("")
 
   const getConversationInfo = (conversation) => {
-    const book = books.find((b) => b.id === conversation.bookId)
-    const otherUserId = conversation.buyerId === user?.id ? conversation.sellerId : conversation.buyerId
-    const otherUserName = conversation.buyerId === user?.id ? book?.sellerName : "Buyer"
-    const conversationMessages = messages[conversation.id] || []
-    const lastMessage = conversationMessages[conversationMessages.length - 1]
-    const unreadCount = conversationMessages.filter((msg) => msg.senderId !== user?.id && !msg.read).length
+    const book = books.find((b) => b._id === conversation.bookId)
+    // ensure a string fallback for display name
+    const otherUserId = conversation.buyerId === user?._id ? conversation.sellerId : conversation.buyerId
+    const otherUserName =
+      conversation.buyerId === user?._id ? (book?.sellerName || "Seller") : (conversation.otherName || "Buyer")
+    const conversationMessages = messages[conversation._id] || []
+    const lastMessage = conversationMessages[conversationMessages.length - 1] || null
+    const unreadCount = conversationMessages.filter((msg) => msg.senderId !== user?._id && !msg.read).length
 
     return {
       ...conversation,
@@ -37,15 +39,14 @@ export function ChatSidebar({ activeConversationId, onConversationSelect }) {
     .filter((conv) => {
       if (!searchQuery) return true
       return (
-        conv.otherUserName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        conv.book?.title.toLowerCase().includes(searchQuery.toLowerCase())
+        (conv.otherUserName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (conv.book?.title || "").toLowerCase().includes(searchQuery.toLowerCase())
       )
     })
     .sort((a, b) => {
-      if (a.lastMessage && b.lastMessage) {
-        return new Date(b.lastMessage.timestamp).getTime() - new Date(a.lastMessage.timestamp).getTime()
-      }
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      const aTime = new Date(a.lastMessage?.timestamp || a.lastMessage?.createdAt || a.updatedAt || a.createdAt).getTime()
+      const bTime = new Date(b.lastMessage?.timestamp || b.lastMessage?.createdAt || b.updatedAt || b.createdAt).getTime()
+      return bTime - aTime
     })
 
   return (
@@ -75,16 +76,20 @@ export function ChatSidebar({ activeConversationId, onConversationSelect }) {
           ) : (
             filteredConversations.map((conversation) => (
               <div
-                key={conversation.id}
-                onClick={() => onConversationSelect(conversation.id)}
+                key={conversation._id}
+                onClick={() =>
+                {
+                  // console.log(conversation._id)
+                   onConversationSelect(conversation._id)
+                 } }
                 className={cn(
                   "flex items-center gap-3 p-4 cursor-pointer hover:bg-muted/50 transition-colors",
-                  activeConversationId === conversation.id && "bg-muted",
+                  activeConversationId === conversation._id && "bg-muted",
                 )}
               >
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={`/placeholder.svg?height=40&width=40&query=user avatar`} />
-                  <AvatarFallback>{conversation.otherUserName.charAt(0)}</AvatarFallback>
+                  <AvatarFallback>{(conversation.otherUserName && conversation.otherUserName.charAt(0)) || "?"}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">

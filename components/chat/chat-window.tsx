@@ -8,59 +8,102 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { useAuthStore, useChatStore, useBooksStore } from "@/lib/store"
 import { Send, BookOpen, MessageCircle } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, socketRef } from "@/lib/utils"
 import Image from "next/image"
+import { io } from "socket.io-client"
 
 export function ChatWindow({ conversationId }) {
   const { user } = useAuthStore()
-  const { conversations, messages, sendMessage, getConversationMessages } = useChatStore()
+  const {
+    conversations,
+    messages,
+    sendMessageViaSocket,
+    // getConversationMessages,
+  } = useChatStore()
   const { books } = useBooksStore()
+  
   const [newMessage, setNewMessage] = useState("")
   const messagesEndRef = useRef(null)
+  // conversation data
+  const conversation = conversations.find((c) => String(c?._id) === String(conversationId))
+  const conversationMessages = messages[conversationId] || []
+  
+  // console.log(books)
+  // associated book
+  const book = books.find((b) => b._id === conversation?.bookId)
+  
+  // other user logic
+  const otherUserId =
+  conversation?.buyerId === user?._id ? conversation?.sellerId : conversation?.buyerId
+  
+  const otherUserName =
+  conversation?.buyerId === user?._id ? (book?.sellerName || "Seller") : "Buyer"
+  
+  const isUserSeller = conversation?.sellerId === user?._id
 
-  const conversation = conversations.find((c) => c.id === conversationId)
-  const conversationMessages = getConversationMessages(conversationId)
-  const book = books.find((b) => b.id === conversation?.bookId)
-
-  const otherUserId = conversation?.buyerId === user?.id ? conversation?.sellerId : conversation?.buyerId
-  const otherUserName = conversation?.buyerId === user?.id ? book?.sellerName : "Buyer"
-  const isUserSeller = conversation?.sellerId === user?.id
+  // socket logic
+  const userId = user._id
+  const targetUserId = conversation ? (conversation.buyerId === user._id ? conversation.sellerId : conversation.buyerId) : null
+ console.log(userId, targetUserId)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
+useEffect(() => {
+  const socket = socketRef()
+    if (!userId) return;
+    console.log(userId, targetUserId)
+
+   console.log(socket)
+    socket.on("connect", () => {
+      console.log('hi')
+      socket.emit("join", { userId, targetUserId });
+     
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+    
+  }, [userId, targetUserId]);
+ 
+
   useEffect(() => {
     scrollToBottom()
   }, [conversationMessages])
-
+ 
   const handleSendMessage = (e) => {
     e.preventDefault()
     if (!newMessage.trim() || !conversationId || !user) return
+    
+    const socket = socketRef()
 
-    sendMessage(conversationId, user.id, newMessage.trim())
+   socket.emit('message:send',{conversationId, userId, newMessage, targetUserId } )
+
+    // sendMessageViaSocket({
+    //   conversationId,
+    //   senderId: userId,
+    //   content: newMessage.trim(),
+    // })
+
     setNewMessage("")
   }
 
-  const formatTime = (timestamp) => {
-    return new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-  }
+  const formatTime = (ts) =>
+    new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
 
-  const formatDate = (timestamp) => {
-    const date = new Date(timestamp)
+  const formatDate = (ts) => {
+    const date = new Date(ts)
     const today = new Date()
     const yesterday = new Date(today)
-    yesterday.setDate(yesterday.getDate() - 1)
+    yesterday.setDate(today.getDate() - 1)
 
-    if (date.toDateString() === today.toDateString()) {
-      return "Today"
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return "Yesterday"
-    } else {
-      return date.toLocaleDateString()
-    }
+    if (date.toDateString() === today.toDateString()) return "Today"
+    if (date.toDateString() === yesterday.toDateString()) return "Yesterday"
+    return date.toLocaleDateString()
   }
-
+  console.log(conversation, book)
   if (!conversation || !book) {
     return (
       <Card className="h-full flex items-center justify-center">
@@ -76,24 +119,24 @@ export function ChatWindow({ conversationId }) {
 
   return (
     <Card className="h-full flex flex-col">
-      {/* Chat Header */}
       <CardHeader className="pb-3 border-b">
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={`/placeholder.svg?height=40&width=40&query=user avatar`} />
-            <AvatarFallback>{otherUserName.charAt(0)}</AvatarFallback>
+            <AvatarImage src="/placeholder.svg" />
+            <AvatarFallback>{(otherUserName && otherUserName.charAt(0)) || "?"}</AvatarFallback>
           </Avatar>
           <div className="flex-1">
             <CardTitle className="text-lg">{otherUserName}</CardTitle>
-            <p className="text-sm text-muted-foreground">{isUserSeller ? "Interested in your book" : "Seller"}</p>
+            <p className="text-sm text-muted-foreground">
+              {isUserSeller ? "Interested in your book" : "Seller"}
+            </p>
           </div>
         </div>
 
-        {/* Book Info */}
         <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg mt-3">
           <div className="w-12 h-16 relative rounded overflow-hidden">
             <Image
-              src={book.image || "/placeholder.svg?height=64&width=48&query=book cover"}
+              src={book.image || "/placeholder.svg"}
               alt={book.title}
               fill
               className="object-cover"
@@ -107,14 +150,13 @@ export function ChatWindow({ conversationId }) {
                 {book.condition}
               </Badge>
               <Badge variant="secondary" className="text-xs">
-                ${book.price}
+                ₹{book.price}
               </Badge>
             </div>
           </div>
         </div>
       </CardHeader>
 
-      {/* Messages */}
       <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
         {conversationMessages.length === 0 ? (
           <div className="text-center text-muted-foreground py-8">
@@ -124,56 +166,62 @@ export function ChatWindow({ conversationId }) {
         ) : (
           <>
             {conversationMessages.map((message, index) => {
-              const isCurrentUser = message.senderId === user?.id
-              const showDate =
-                index === 0 || formatDate(message.timestamp) !== formatDate(conversationMessages[index - 1].timestamp)
+              const isCurrentUser = message.senderId === user?._id
+              const currentDate = formatDate(message.createdAt)
+              const prevDate =
+                index > 0 ? formatDate(conversationMessages[index - 1].createdAt) : null
+
+              const showDate = index === 0 || currentDate !== prevDate
 
               return (
-                <div key={message.id}>
+                <div key={message._id || message.tempId}>
                   {showDate && (
                     <div className="text-center text-xs text-muted-foreground py-2">
-                      {formatDate(message.timestamp)}
+                      {currentDate}
                     </div>
                   )}
-                  <div className={cn("flex gap-2", isCurrentUser ? "justify-end" : "justify-start")}>
+
+                  <div className={cn(
+                    "flex gap-2",
+                    isCurrentUser ? "justify-end" : "justify-start"
+                  )}>
                     {!isCurrentUser && (
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={`/placeholder.svg?height=32&width=32&query=user avatar`} />
-                        <AvatarFallback className="text-xs">{otherUserName.charAt(0)}</AvatarFallback>
+                        <AvatarImage src="/placeholder.svg" />
+                        <AvatarFallback>{(otherUserName && otherUserName.charAt(0)) || "?"}</AvatarFallback>
                       </Avatar>
                     )}
+
                     <div
                       className={cn(
                         "max-w-[70%] rounded-lg px-3 py-2",
-                        isCurrentUser ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+                        isCurrentUser
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground"
                       )}
                     >
                       <p className="text-sm">{message.content}</p>
-                      <p
-                        className={cn(
-                          "text-xs mt-1",
-                          isCurrentUser ? "text-primary-foreground/70" : "text-muted-foreground/70",
-                        )}
-                      >
-                        {formatTime(message.timestamp)}
+                      <p className="text-xs mt-1 opacity-70">
+                        {formatTime(message.createdAt)}
                       </p>
                     </div>
+
                     {isCurrentUser && (
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={user?.avatar || "/placeholder.svg"} />
-                        <AvatarFallback className="text-xs">{user?.name?.charAt(0)}</AvatarFallback>
+                        <AvatarFallback>{(user?.name && user.name.charAt(0)) || (user?.email && user.email.charAt(0)) || "?"}</AvatarFallback>
                       </Avatar>
                     )}
                   </div>
                 </div>
               )
             })}
+
             <div ref={messagesEndRef} />
           </>
         )}
       </CardContent>
 
-      {/* Message Input */}
       <div className="border-t p-4">
         <form onSubmit={handleSendMessage} className="flex gap-2">
           <Input

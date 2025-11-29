@@ -11,21 +11,27 @@ import { useRouter } from "next/navigation"
 
 export function BookCard({ book }) {
   const { user, isAuthenticated } = useAuthStore()
-  const { createConversation } = useChatStore()
+  const { openConversation } = useChatStore()
   const router = useRouter()
 
-  const handleContactSeller = () => {
-    if (!isAuthenticated) {
-      router.push("/auth")
-      return
-    }
-
-    if (user.id === book.sellerId) {
+  const handleContactSeller = async () => {
+ 
+   console.log(book)
+    // use normalized _id for user
+    if (user?._id === book.sellerId) {
       return // Can't message yourself
     }
 
-    const conversationId = createConversation(user.id, book.sellerId, book.id)
-    router.push(`/messages?conversation=${conversationId}`)
+    // openConversation in the store expects an object; await it
+    const conversationId = await openConversation({
+      buyerId: user._id,
+      sellerId: book.sellerId,
+      bookId: book._id,
+      userId: user._id,
+    })
+    if (conversationId) {
+      router.push(`/messages?conversation=${conversationId}`)
+    }
   }
 
   const handleBuyNow = () => {
@@ -34,7 +40,7 @@ export function BookCard({ book }) {
       return
     }
 
-    if (user.id === book.sellerId) {
+    if (user?._id === book.sellerId) {
       return // Can't buy your own book
     }
 
@@ -112,17 +118,15 @@ export function BookCard({ book }) {
       <CardContent className="pt-0">
         <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{book.description}</p>
 
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Avatar className="h-6 w-6">
-              <AvatarImage src={`/placeholder.svg?height=24&width=24&query=user avatar`} />
-              <AvatarFallback className="text-xs">{book.sellerName.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <span className="text-xs text-muted-foreground">{book.sellerName}</span>
-          </div>
+        <div className="flex items-center gap-2">
+          <Avatar className="h-6 w-6">
+            <AvatarImage src={`/placeholder.svg?height=24&width=24&query=user avatar`} />
+            <AvatarFallback className="text-xs">{(book.sellerName && book.sellerName.charAt(0)) || "?"}</AvatarFallback>
+          </Avatar>
+          <span className="text-xs text-muted-foreground">{book.sellerName}</span>
         </div>
 
-        {isAuthenticated && user.id !== book.sellerId && (
+        {isAuthenticated && user?._id !== book.sellerId && (
           <div className="flex gap-2">
             <Button size="sm" onClick={handleBuyNow} className="flex-1">
               <ShoppingCart className="h-3 w-3 mr-1" />

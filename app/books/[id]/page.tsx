@@ -18,7 +18,7 @@ export default function BookDetailsPage() {
 
   // const { books } = useBooksStore()
   const { user, isAuthenticated } = useAuthStore()
-  const { createConversation } = useChatStore()
+  const { openConversation } = useChatStore()
   const [loading, setLoading] = React.useState(true)
 
   // console.log(books)
@@ -64,16 +64,24 @@ export default function BookDetailsPage() {
     }
   }
 
-  const handleContactSeller = () => {
+  const handleContactSeller = async () => {
     if (!isAuthenticated) {
       router.push("/auth")
       return
     }
-    if (user.id === book?.sellerId) {
+    if (user?._id === book?.sellerId) {
       return
     }
-    const conversationId = createConversation(user.id, book!.sellerId, book!.id)
-    router.push(`/messages?conversation=${conversationId}`)
+    // use openConversation from the store
+    const conversationId = await openConversation({
+      buyerId: user._id,
+      sellerId: book.sellerId,
+      bookId: book._id,
+      userId: user._id,
+    })
+    if (conversationId) {
+      router.push(`/messages?conversation=${conversationId}`)
+    }
   }
 
   const handleBuyNow = () => {
@@ -81,10 +89,10 @@ export default function BookDetailsPage() {
       router.push("/auth")
       return
     }
-    if (user.id === book?.sellerId) {
+    if (user?._id === book?.sellerId) {
       return
     }
-    router.push(`/checkout/${book!.id}`)
+    router.push(`/checkout/${book!._id}`)
   }
 
   if (!book) {
@@ -166,7 +174,7 @@ export default function BookDetailsPage() {
             <div className="flex items-center gap-3">
               <Avatar className="h-8 w-8">
                 <AvatarImage src="/diverse-user-avatars.png" />
-                <AvatarFallback>{book.sellerName.charAt(0)}</AvatarFallback>
+                <AvatarFallback>{(book.sellerName && book.sellerName.charAt(0)) || "?"}</AvatarFallback>
               </Avatar>
               <span className="text-sm">{book.sellerName}</span>
             </div>
@@ -184,8 +192,8 @@ export default function BookDetailsPage() {
           </div>
 
           <div className="mt-6 text-sm text-muted-foreground">
-            <p>ISBN: {book.isbn}</p>
-            <p className="mt-1">Listing created: {new Date(book.createdAt).toLocaleDateString()}</p>
+            <p>ISBN: {book?.isbn || 'Not Provided'}</p>
+            <p className="mt-1">Listing created: {book?.createdAt ? new Date(book.createdAt).toLocaleDateString() : '—'}</p>
           </div>
         </div>
       </div>
