@@ -11,6 +11,7 @@ import { Send, BookOpen, MessageCircle } from "lucide-react"
 import { cn, socketRef } from "@/lib/utils"
 import Image from "next/image"
 import { io } from "socket.io-client"
+import { fetchMessages } from "@/app/services/chatService"
 
 export function ChatWindow({ conversationId }) {
   const { user } = useAuthStore()
@@ -19,18 +20,37 @@ export function ChatWindow({ conversationId }) {
     messages,
     sendMessageViaSocket,
     // getConversationMessages,
+    fetchConversationMessages
   } = useChatStore()
-  const { books } = useBooksStore()
+  // console.log(useChatStore())
+  const { fetchBooks } = useBooksStore()
   
   const [newMessage, setNewMessage] = useState("")
+  const [book, setBook] = useState(null)
+
   const messagesEndRef = useRef(null)
   // conversation data
   const conversation = conversations.find((c) => String(c?._id) === String(conversationId))
   const conversationMessages = messages[conversationId] || []
   
+  console.log(conversation)
+
+  useEffect(() => {
+    const fetchBook = async () => {
+   try {
+   const books =await fetchBooks()
+    console.log(books)
+    const book = books.find((b) => b._id === conversation?.bookId)
+    setBook(book)
+  } catch (error) {
+    console.error("Error fetching books:", error)
+   }
+  }
+  fetchBook()
+  }, [conversation])
+
   // console.log(books)
   // associated book
-  const book = books.find((b) => b._id === conversation?.bookId)
   
   // other user logic
   const otherUserId =
@@ -45,25 +65,40 @@ export function ChatWindow({ conversationId }) {
   const userId = user._id
   const targetUserId = conversation ? (conversation.buyerId === user._id ? conversation.sellerId : conversation.buyerId) : null
  console.log(userId, targetUserId)
+ const bookId = conversation ? conversation.bookId : null
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
+  
+  
+useEffect(()=>{
+  const fetchMessages = async () => {
+    if (conversationId) {
+      try{
+    const message = await fetchConversationMessages(conversationId)
+    console.log(message)
+      } catch (error) {
+        console.error("Error fetching messages:", error)
+      }
+    }
+  }
+  fetchMessages()
+}
+  ,[conversationId])
 
 useEffect(() => {
+  
   const socket = socketRef()
     if (!userId) return;
     console.log(userId, targetUserId)
-
-   console.log(socket)
     socket.on("connect", () => {
-      console.log('hi')
       socket.emit("join", { userId, targetUserId });
      
     });
 
     return () => {
-      socket.disconnect();
+     if (socket.connected) socket.disconnect();
     };
     
   }, [userId, targetUserId]);
@@ -73,22 +108,30 @@ useEffect(() => {
     scrollToBottom()
   }, [conversationMessages])
  
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async(e) => {
     e.preventDefault()
     if (!newMessage.trim() || !conversationId || !user) return
     
     const socket = socketRef()
 
-   socket.emit('message:send',{conversationId, userId, newMessage, targetUserId } )
-
-    // sendMessageViaSocket({
-    //   conversationId,
-    //   senderId: userId,
-    //   content: newMessage.trim(),
-    // })
+   socket.emit('message:send',{conversationId, userId, newMessage, targetUserId, bookId } )
+   // for showing on UI immediately
+   sendMessageViaSocket({
+      conversationId,
+      senderId: user._id,
+      content: newMessage,
+   })
+   
+  //  res.map(msg => {
+  //   msg.conte
+  //   })
 
     setNewMessage("")
   }
+
+  // useEffect(() => {
+  //   fetchMessages()
+  // }, [newMessage])
 
   const formatTime = (ts) =>
     new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
@@ -103,7 +146,8 @@ useEffect(() => {
     if (date.toDateString() === yesterday.toDateString()) return "Yesterday"
     return date.toLocaleDateString()
   }
-  console.log(conversation, book)
+  console.log(conversation)
+  console.log(book)
   if (!conversation || !book) {
     return (
       <Card className="h-full flex items-center justify-center">

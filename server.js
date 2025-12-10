@@ -29,7 +29,6 @@ app.prepare().then(async () => {
   const io = new Server(server, {
     cors: { origin: "*" },
   })
-console.log(io)
 io.on("connect", (socket) => {
   // you may authenticate socket here and set socket.userId
   socket.on("join", ({ userId, targetUserId }) => {
@@ -44,16 +43,16 @@ io.on("connect", (socket) => {
   socket.on("message:send", async (payload) => {
     try {
       // ensure conversation exists
-      let { conversationId, senderId, content, buyerId, sellerId, bookId } = payload;
-
+      let { conversationId, userId: senderId, newMessage: content, targetUserId: sellerId, bookId } = payload;
+  console.log(conversationId, senderId, content, sellerId, bookId)
       if (!conversationId) {
         // try to find or create conversation
-        let conv = await Conversation.findOne({ buyerId, sellerId, bookId });
-        if (!conv) conv = await Conversation.create({ buyerId, sellerId, bookId });
+        let conv = await Conversation.findOne({ senderId, sellerId, bookId });
+        if (!conv) conv = await Conversation.create({ senderId, sellerId, bookId });
         conversationId = conv._id;
+        console.log('conv', conv)
       }
-
-      const msg = await Message.create({ conversationId, senderId, content, read: false });
+      const msg = await Message.create({ conversationId, senderId, receiverId: sellerId, content, read: false });
 
       // update lastMessage on conversation
       await Conversation.findByIdAndUpdate(conversationId, { lastMessage: msg._id, updatedAt: new Date() });
@@ -61,14 +60,15 @@ io.on("connect", (socket) => {
       // emit to participants: get conv participants
       const conv = await Conversation.findById(conversationId).lean();
       if (conv) {
+        console.log('conv',conv)
         // emit to buyer and seller rooms (they should have joined a room with their userId)
-        io.to(String(conv.buyerId)).to(String(conv.sellerId)).emit("message:received", {
+        io.to(String(conv.senderId)).to(String(conv.sellerId)).emit("message:received", {
           message: msg,
           conversationId,
         });
       } else {
         // fallback: broadcast
-        io.emit("message:received", { message: msg, conversationId });
+        io.to("message:received", { message: msg, conversationId });
       }
     } catch (err) {
       console.error("socket message:send error", err);
@@ -82,7 +82,7 @@ io.on("connect", (socket) => {
       // notify other party
       const conv = await Conversation.findById(conversationId);
       if (conv) {
-        io.to(String(conv.buyerId)).to(String(conv.sellerId)).emit("message:read", { conversationId, by: userId });
+        io.to(String(conv.senderId)).to(String(conv.sellerId)).emit("message:read", { conversationId, by: userId });
       }
     } catch (err) {
       console.error("message:read error", err);

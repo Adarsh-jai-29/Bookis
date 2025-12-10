@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/dbConnect";
-import Message from "@/lib/models/Message";
+import Message from "@/lib/models/Message.js";
 
 export async function GET(req: Request, { params }) {
   const { conversationId } = params;
