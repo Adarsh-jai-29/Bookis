@@ -27,11 +27,18 @@ export function ChatWindow({ conversationId }) {
   
   const [newMessage, setNewMessage] = useState("")
   const [book, setBook] = useState(null)
-
   const messagesEndRef = useRef(null)
+
   // conversation data
   const conversation = conversations.find((c) => String(c?._id) === String(conversationId))
   const conversationMessages = messages[conversationId] || []
+  
+  // other user logic
+  const otherUserId =
+  conversation?.buyerId === user?._id ? conversation?.sellerId : conversation?.buyerId
+  const otherUserName =
+  conversation?.buyerId === user?._id ? (book?.sellerName || "Seller") : "Buyer"
+  const isUserSeller = conversation?.sellerId === user?._id
   
   console.log(conversation)
 
@@ -49,64 +56,49 @@ export function ChatWindow({ conversationId }) {
   fetchBook()
   }, [conversation])
 
-  // console.log(books)
-  // associated book
-  
-  // other user logic
-  const otherUserId =
-  conversation?.buyerId === user?._id ? conversation?.sellerId : conversation?.buyerId
-  
-  const otherUserName =
-  conversation?.buyerId === user?._id ? (book?.sellerName || "Seller") : "Buyer"
-  
-  const isUserSeller = conversation?.sellerId === user?._id
-
   // socket logic
   const userId = user._id
   const targetUserId = conversation ? (conversation.buyerId === user._id ? conversation.sellerId : conversation.buyerId) : null
- console.log(userId, targetUserId)
- const bookId = conversation ? conversation.bookId : null
+  const bookId = conversation ? conversation.bookId : null
+  console.log(userId, targetUserId)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
-  
-  
-useEffect(()=>{
-  const fetchMessages = async () => {
-    if (conversationId) {
-      try{
-    const message = await fetchConversationMessages(conversationId)
-    console.log(message)
-      } catch (error) {
-        console.error("Error fetching messages:", error)
-      }
-    }
-  }
-  fetchMessages()
-}
-  ,[conversationId])
-
-useEffect(() => {
-  
-  const socket = socketRef()
-    if (!userId) return;
-    console.log(userId, targetUserId)
-    socket.on("connect", () => {
-      socket.emit("join", { userId, targetUserId });
-     
-    });
-
-    return () => {
-     if (socket.connected) socket.disconnect();
-    };
-    
-  }, [userId, targetUserId]);
- 
-
   useEffect(() => {
     scrollToBottom()
   }, [conversationMessages])
+
+  useEffect(()=>{
+    const fetchMessages = async () => {
+      if (conversationId) {
+        try{
+      const message = await fetchConversationMessages(conversationId)
+      console.log(message)
+        } catch (error) {
+          console.error("Error fetching messages:", error)
+        }
+      }
+    }
+    fetchMessages()
+  }
+  ,[conversationId])
+
+  useEffect(() => {
+    const socket = socketRef()
+      if (!userId) return;
+      console.log(userId, targetUserId)
+      socket.on("connect", () => {
+        socket.emit("join", { userId, targetUserId });
+      
+      });
+
+      return () => {
+      if (socket.connected) socket.disconnect();
+      };
+      
+    }, [userId, targetUserId]);
+ 
  
   const handleSendMessage = async(e) => {
     e.preventDefault()
