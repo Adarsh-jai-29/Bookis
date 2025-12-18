@@ -22,7 +22,6 @@ export async function POST(req: Request) {
       image = '',
     } = body
 
-    console.log("sellerId",sellerId)
     const newBook = new Book({
       title,
       author,
@@ -51,7 +50,6 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url)
     const userId = searchParams.get("userId")
-    console.log(userId)
     const query = userId ? { userId } : {}
 
     const books = await Book.find(query).sort({ createdAt: -1 })

@@ -40,13 +40,11 @@ export function ChatWindow({ conversationId }) {
   conversation?.buyerId === user?._id ? (book?.sellerName || "Seller") : "Buyer"
   const isUserSeller = conversation?.sellerId === user?._id
   
-  console.log(conversation)
 
   useEffect(() => {
     const fetchBook = async () => {
    try {
    const books =await fetchBooks()
-    console.log(books)
     const book = books.find((b) => b._id === conversation?.bookId)
     setBook(book)
   } catch (error) {
@@ -60,7 +58,7 @@ export function ChatWindow({ conversationId }) {
   const userId = user._id
   const targetUserId = conversation ? (conversation.buyerId === user._id ? conversation.sellerId : conversation.buyerId) : null
   const bookId = conversation ? conversation.bookId : null
-  console.log(userId, targetUserId)
+  // console.log(userId, targetUserId)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -74,7 +72,6 @@ export function ChatWindow({ conversationId }) {
       if (conversationId) {
         try{
       const message = await fetchConversationMessages(conversationId)
-      console.log(message)
         } catch (error) {
           console.error("Error fetching messages:", error)
         }
@@ -87,7 +84,6 @@ export function ChatWindow({ conversationId }) {
   useEffect(() => {
     const socket = socketRef()
       if (!userId) return;
-      console.log(userId, targetUserId)
       socket.on("connect", () => {
         socket.emit("join", { userId, targetUserId });
       
@@ -138,8 +134,6 @@ export function ChatWindow({ conversationId }) {
     if (date.toDateString() === yesterday.toDateString()) return "Yesterday"
     return date.toLocaleDateString()
   }
-  console.log(conversation)
-  console.log(book)
   if (!conversation || !book) {
     return (
       <Card className="h-full flex items-center justify-center">

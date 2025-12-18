@@ -21,7 +21,6 @@ export default function BrowsePage() {
       if (!res.ok) throw new Error('Failed to fetch books')
       const data = await res.json()
       setAllBooks(data)  //store books in local state for rendering
-      console.log(data)
       addBook(data)  //store books in Zustand store for global access and next time avoid fetching again
       setLoading(false)
     }

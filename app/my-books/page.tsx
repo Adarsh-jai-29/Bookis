@@ -37,7 +37,7 @@ export default function MyBooksPage() {
   // 📦 Fetch user's books
   useEffect(() => {
     const fetchMyBooks = async () => {
-      console.log('usr:',user)
+      // console.log('usr:',user)
       if (!user?._id) return
 
       try {
@@ -48,7 +48,6 @@ export default function MyBooksPage() {
         const data = await res.json()
         setBooks(data)
         addBook(data)
-        console.log("Fetched books:", data)
       } catch (err) {
         console.error(err)
       } finally {
@@ -60,7 +59,6 @@ export default function MyBooksPage() {
   }, [isAuthenticated, user?._id])
 
   if (!isAuthenticated) return null
- console.log("loading",loading)
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">

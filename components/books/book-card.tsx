@@ -16,7 +16,6 @@ export function BookCard({ book }) {
 
   const handleContactSeller = async () => {
  
-   console.log(book)
     // use normalized _id for user
     if (user?._id === book.sellerId) {
       return // Can't message yourself

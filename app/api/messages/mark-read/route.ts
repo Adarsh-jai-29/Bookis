@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/dbConnect";
+import Message from "@/lib/models/Message";
 
 export async function PATCH(req) {
   const body = await req.json();

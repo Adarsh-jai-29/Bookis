@@ -32,10 +32,8 @@ app.prepare().then(async () => {
 io.on("connect", (socket) => {
   // you may authenticate socket here and set socket.userId
   socket.on("join", ({ userId, targetUserId }) => {
-    console.log('first')
     if (!userId) return;
     const room = [userId, targetUserId].sort().join("_");
-    console.log('joining Room'+ room)
     socket.join(room); // join room for conversation between two users
   });
 
@@ -44,13 +42,12 @@ io.on("connect", (socket) => {
     try {
       // ensure conversation exists
       let { conversationId, userId: senderId, newMessage: content, targetUserId: sellerId, bookId } = payload;
-  console.log(conversationId, senderId, content, sellerId, bookId)
+  // console.log(conversationId, senderId, content, sellerId, bookId)
       if (!conversationId) {
         // try to find or create conversation
         let conv = await Conversation.findOne({ senderId, sellerId, bookId });
         if (!conv) conv = await Conversation.create({ senderId, sellerId, bookId });
         conversationId = conv._id;
-        console.log('conv', conv)
       }
       const msg = await Message.create({ conversationId, senderId, receiverId: sellerId, content, read: false });
 
@@ -60,7 +57,6 @@ io.on("connect", (socket) => {
       // emit to participants: get conv participants
       const conv = await Conversation.findById(conversationId).lean();
       if (conv) {
-        console.log('conv',conv)
         // emit to buyer and seller rooms (they should have joined a room with their userId)
         io.to(String(conv.senderId)).to(String(conv.sellerId)).emit("message:received", {
           message: msg,
@@ -90,5 +86,5 @@ io.on("connect", (socket) => {
   });
 });
 
-server.listen(4000, () => console.log("Socket server listening on 4000"));
+server.listen(4000, () => console.log("Socket server listening on http://localhost:4000"));
 })

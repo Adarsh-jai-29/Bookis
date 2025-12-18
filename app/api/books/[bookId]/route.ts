@@ -48,9 +48,8 @@ export async function PUT(req: Request) {
 export async function GET(req: Request) {
   try {
     await connectDB()
-    console.log('req',req.url)
     const book = await Book.findById(new URL(req.url).pathname.split("/").pop())
-    console.log('book',book)
+    // console.log('book',book)
     if (!book) {
       return NextResponse.json({ error: "Book not found" }, { status: 404 })
     }

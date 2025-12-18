@@ -13,7 +13,7 @@ import { Upload, X, BookOpen, DollarSign, Tag, FileText } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 
-export function BookForm({ book = null, onSuccess }) {
+export function BookForm({ book, onSuccess }) {
   const { user } = useAuthStore()
   const { addBook, updateBook } = useBooksStore()
   const router = useRouter()
@@ -103,7 +103,6 @@ export function BookForm({ book = null, onSuccess }) {
           }
       }
 
-      onSuccess?.()
       router.push("/my-books")
     } catch (error) {
       console.error("Error saving book:", error)
