@@ -18,6 +18,7 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req) {
+  try {
   // list conversations for a user: ?userId=...
   const url = new URL(req.url);
   const userId = url.searchParams.get("userId");
@@ -32,4 +33,11 @@ export async function GET(req) {
     .lean();
 
   return NextResponse.json({ conversations });
+   } catch (err) {
+    console.error("GET /api/conversations error:", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
 }
